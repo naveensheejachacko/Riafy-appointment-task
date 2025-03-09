@@ -178,6 +178,11 @@ def book_appointment(request):
         # Parse date
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
+        # Validate time slot
+        is_valid, error_message = is_valid_time_slot(time_slot)
+        if not is_valid:
+            return Response({'error': error_message}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Check if slot is already booked
         if Appointment.objects.filter(date=date, time_slot=time_slot).exists():
             return Response({'error': 'This slot is already booked'}, status=status.HTTP_400_BAD_REQUEST)
@@ -199,3 +204,32 @@ def book_appointment(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+def is_valid_time_slot(time_slot):
+    """Validate if the time slot is within business hours."""
+    try:
+        # Convert time slot string to datetime object for comparison
+        slot_time = datetime.strptime(time_slot, '%I:%M %p')
+        
+        # Define business hours
+        business_start = datetime.strptime('10:00 AM', '%I:%M %p')
+        business_end = datetime.strptime('5:00 PM', '%I:%M %p')
+        lunch_start = datetime.strptime('1:00 PM', '%I:%M %p')
+        lunch_end = datetime.strptime('2:00 PM', '%I:%M %p')
+        
+        # Check if time is within business hours
+        if not (business_start <= slot_time < business_end):
+            return False, "Appointments are only available between 10:00 AM and 5:00 PM"
+            
+        # Check if time is during lunch break
+        if lunch_start <= slot_time < lunch_end:
+            return False, "Appointments are not available during lunch hour (1:00 PM - 2:00 PM)"
+            
+        # Check if time is at 30-minute intervals
+        minutes = slot_time.hour * 60 + slot_time.minute
+        if minutes % 30 != 0:
+            return False, "Appointments must be scheduled at 30-minute intervals"
+            
+        return True, ""
+    except ValueError:
+        return False, "Invalid time format. Please use format like '10:00 AM'"
