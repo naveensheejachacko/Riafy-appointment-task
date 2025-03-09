@@ -21,7 +21,7 @@ A simple appointment booking system built with Django and JavaScript, featuring 
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/naveensheejachacko/Riafy-appointment-task.git
 cd appointment_system
 ```
 
